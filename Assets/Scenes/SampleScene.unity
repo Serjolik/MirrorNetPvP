@@ -371,6 +371,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   pointsToWin: 3
+  endGame: {fileID: 0}
 --- !u!4 &784122020
 Transform:
   m_ObjectHideFlags: 0
@@ -739,7 +740,7 @@ MonoBehaviour:
   authenticator: {fileID: 0}
   playerPrefab: {fileID: 8625843026800176479, guid: 122de82bcf120684e984cfc1a9aae6c8, type: 3}
   autoCreatePlayer: 1
-  playerSpawnMethod: 1
+  playerSpawnMethod: 0
   spawnPrefabs: []
   timeInterpolationGui: 0
 --- !u!1 &1579189386
@@ -787,6 +788,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   pointsToWin: 3
+  endGame: {fileID: 11400000, guid: e33306b87ee38fe46ad1e99991012fa0, type: 2}
 --- !u!1 &2110077967
 GameObject:
   m_ObjectHideFlags: 0
