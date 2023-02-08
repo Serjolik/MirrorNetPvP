@@ -1,67 +1,32 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Player : MonoBehaviour
+public class Player
 {
-    /// <summary>
-    /// Coloring time
-    /// </summary>
-    [SerializeField] private float affectedTime = 3f;
+    public string name { get; private set; }
+    public int points { get; private set; }
 
-    [Header("Rendering and colors")]
-    /// <summary>
-    /// player renderer component
-    /// </summary>
-    [SerializeField] private Renderer playerRenderer;
-    /// <summary>
-    /// player start color
-    /// </summary>
-    [SerializeField] private Color playerColor;
-    /// <summary>
-    /// player affected color
-    /// </summary>
-    [SerializeField] private Color affectedColor;
+    private List<Renderer> playerRenderer;
 
-    private Player anotherPlayer;
-    private PlayerMovement ourMovement;
-    private int points = 0;
+    // default color white
+    public Color playerColor { get; private set; } = Color.white;
 
-    public bool affected { get; private set; }
-
-    void Start()
+    public Player(string name, List<Renderer> playerRenderer)
     {
-        playerRenderer.material.color = playerColor;
-        affected = false;
+        this.name = name;
+        this.playerRenderer = playerRenderer;
     }
 
-    private void OnCollisionEnter(Collision collision)
+    public void GivePoint()
     {
-        anotherPlayer = collision.gameObject.GetComponent<Player>();
-
-        if(anotherPlayer != null )
+        points++;
+    }
+    public void Paint(Color color)
+    {
+        foreach (Renderer renderer in playerRenderer)
         {
-            ourMovement = GetComponent<PlayerMovement>();
-            if (!anotherPlayer.affected && ourMovement.inDash)
-            {
-                anotherPlayer.Bump();
-                points++;
-            }
+            renderer.material.color = color;
         }
-
-    }
-
-    public void Bump()
-    {
-        affected = true;
-        playerRenderer.material.color = affectedColor;
-        Invoke(nameof(affectedTimer), affectedTime);
-    }
-
-    private void affectedTimer()
-    {
-        playerRenderer.material.color = playerColor;
-        affected = false;
     }
 
 }

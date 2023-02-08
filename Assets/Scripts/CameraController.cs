@@ -15,10 +15,19 @@ public class CameraController : MonoBehaviour
     /// </summary>
     [SerializeField] private float rotationSpeed;
 
+
+
     private void Start()
     {
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
+    }
+
+    public void SetParams(Transform orientation, Transform playerTransform, Transform playerObj)
+    {
+        this.orientation = orientation;
+        this.playerTransform = playerTransform;
+        this.playerObj = playerObj;
     }
 
     void Update()

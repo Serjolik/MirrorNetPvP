@@ -20,7 +20,9 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private KeyCode dash = KeyCode.Mouse0;
 
     [Header("Player orientation")]
-    [SerializeField] private Transform orientation;
+    [SerializeField] private Transform playerOrientation;
+    [Header("Player model")]
+    [SerializeField] private Transform model;
 
     private Rigidbody rb;
 
@@ -63,15 +65,14 @@ public class PlayerMovement : MonoBehaviour
 
     private void Move()
     {
-        moveDirection = orientation.forward * verticalInput + orientation.right * horizontalInput;
+        moveDirection = playerOrientation.forward * verticalInput + playerOrientation.right * horizontalInput;
         rb.AddForce(moveDirection.normalized * moveSpeed, ForceMode.Force);
     }
 
     private void Dash()
     {
-        Debug.Log("Dash");
         StartCoroutine(dashTimer());
-        rb.AddForce(orientation.forward * dashForce, ForceMode.Impulse);
+        rb.AddForce(model.forward * dashForce, ForceMode.Impulse);
     }
 
     private IEnumerator dashTimer()
