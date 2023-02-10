@@ -1,13 +1,18 @@
+using Mirror;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class CameraController : MonoBehaviour
+public class CameraController : NetworkBehaviour
 {
+    [Header("Camera prefab")]
+    [SerializeField] GameObject ourCameraObj;
+
     [Header("Player transforms")]
     [SerializeField] private Transform orientation;
     [SerializeField] private Transform playerTransform;
     [SerializeField] private Transform playerObj;
+    [SerializeField] private Transform ourCamera;
 
     [Header("Camera rotation speed")]
     /// <summary>
@@ -17,22 +22,45 @@ public class CameraController : MonoBehaviour
 
 
 
+
     private void Start()
+    {
+        LockCursor();
+    }
+
+    public override void OnStartLocalPlayer()
+    {
+        if (isOwned)
+            ourCameraObj.SetActive(true);
+    }
+
+
+    private void UnlockCursor()
+    {
+        Cursor.lockState = CursorLockMode.Confined;
+        Cursor.visible = true;
+    }
+
+    private void LockCursor()
     {
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
     }
 
-    public void SetParams(Transform orientation, Transform playerTransform, Transform playerObj)
-    {
-        this.orientation = orientation;
-        this.playerTransform = playerTransform;
-        this.playerObj = playerObj;
-    }
-
     void Update()
     {
-        Vector3 viewDir = playerTransform.position - new Vector3(transform.position.x, playerTransform.position.y, transform.position.z);
+        if (!isOwned) return;
+
+        if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            UnlockCursor();
+        }
+        else if (Input.anyKeyDown && !Input.GetKeyDown(KeyCode.Mouse0))
+        {
+            LockCursor();
+        }
+
+        Vector3 viewDir = playerTransform.position - new Vector3(ourCamera.transform.position.x, playerTransform.position.y, ourCamera.transform.position.z);
         orientation.forward = viewDir.normalized;
 
         float verticalInput = Input.GetAxisRaw("Vertical");

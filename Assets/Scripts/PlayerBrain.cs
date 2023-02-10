@@ -1,9 +1,9 @@
 using System.Collections;
 using System.Collections.Generic;
 using Mirror;
+using TMPro;
 using System.Linq;
 using UnityEngine;
-using Cinemachine;
 
 public class PlayerBrain : NetworkBehaviour
 {
@@ -11,59 +11,105 @@ public class PlayerBrain : NetworkBehaviour
     /// Coloring time
     /// </summary>
     [SerializeField] private float affectedTime = 3f;
-
-    [Header("Colors")]
     /// <summary>
     /// player affected color
     /// </summary>
     [SerializeField] private Color affectedColor;
+    private Color playerColor = Color.white;
 
-    private Player player;
     private PlayerBrain anotherPlayer;
     private PlayerMovement ourMovement;
 
     private GameController controller;
 
-    public bool affected { get; private set; }
+    private TextMeshPro playerNameText;
+
+    private List<Renderer> playerRenderer;
+
+    [SyncVar(hook = nameof(OnNameChanged))]
+    public string playerName;
+
+    [SyncVar(hook = nameof(OnColorChange))]
+    public Color thisColor;
+
+    public bool affected = false;
+    public bool isInDash = false;
 
     private void Start()
     {
+        playerRenderer = GetComponentsInChildren<Renderer>().ToList();
+        ourMovement = gameObject.GetComponent<PlayerMovement>();
+        playerNameText = GetComponentInChildren<TextMeshPro>();
+        controller = GameObject.Find("Managers").GetComponent<GameController>();
+    }
+
+    public override void OnStartLocalPlayer()
+    {
         string name = "Player" + Random.Range(100, 999);
-
-        var playerRenderer = GetComponentsInChildren<Renderer>().ToList();
-        player = new Player(name, playerRenderer);
-        controller = GameObject.Find("GameManager").GetComponent<GameController>();
-        affected = false;
+        CmdSetupPlayer(name);
+        CmdChangeColor(playerColor);
     }
 
-    private void OnCollisionEnter(Collision collision)
-    {
-        anotherPlayer = collision.gameObject.GetComponent<PlayerBrain>();
 
-        if(anotherPlayer != null )
+    void OnNameChanged(string _Old, string _New)
+    {
+        playerNameText = GetComponentInChildren<TextMeshPro>();
+        playerNameText.text = playerName;
+        
+    }
+
+    void OnColorChange(Color oldValue, Color newValue)
+    {
+        Debug.Log("OnAffectedChange");
+        playerRenderer = GetComponentsInChildren<Renderer>().ToList();
+        foreach (Renderer renderer in playerRenderer)
         {
-            ourMovement = GetComponent<PlayerMovement>();
-            if (!anotherPlayer.affected && ourMovement.inDash)
-            {
-                anotherPlayer.Bump();
-                player.GivePoint();
-                controller.Bump(player);
-            }
+            renderer.material.color = newValue;
         }
-
+        thisColor = newValue;
     }
 
-    public void Bump()
+    public void CmdBump()
     {
+        Debug.Log("CmdBump");
+        StartCoroutine(affectedTimer());
+    }
+
+    private void Update()
+    {
+        if (!isLocalPlayer)
+        {
+            return;
+        }
+        if (affected)
+            CmdChangeColor(thisColor);
+        else
+            CmdChangeColor(playerColor);
+    }
+
+    [Command]
+    public void CmdOtherBumped()
+    {
+        controller.AddedPoint(playerName);
+    }
+
+    public IEnumerator affectedTimer()
+    {
+        Debug.Log("IEnumerator");
         affected = true;
-        player.Paint(affectedColor);
-        Invoke(nameof(affectedTimer), affectedTime);
+        yield return new WaitForSeconds(affectedTime);
+        affected = false;
     }
 
-    private void affectedTimer()
+    [Command]
+    public void CmdSetupPlayer(string _name)
     {
-        player.Paint(player.playerColor);
-        affected = false;
+        playerName = _name;
+    }
+    [Command]
+    public void CmdChangeColor(Color _newValue)
+    {
+        thisColor = _newValue;
     }
 
 }

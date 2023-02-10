@@ -1,28 +1,23 @@
+using Mirror;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Tilemaps;
 
-public class PlayerMovement : MonoBehaviour
+public class PlayerMovement : NetworkBehaviour
 {
-    [Header("Player movement")]
-    /// <summary>
-    /// player speed
-    /// </summary>
-    [SerializeField] private float moveSpeed = 0.1f;
+    [Header("Movement params")]
+    [SerializeField] private float moveSpeed = 75f;
+    [SerializeField] private float dashForce = 150f;
+    [SerializeField] private float dashCooldown = 3f;
+    [SerializeField] private float dashWorkingTime = 1f;
 
-    [Header("Dash parametrs")]
-    [SerializeField] private float dashForce = 5;
-    [SerializeField] private float dashCooldown = 3;
-    [SerializeField] private float dashWorkingTime = 1;
-
-    [Header("Keys")]
     [SerializeField] private KeyCode dash = KeyCode.Mouse0;
 
-    [Header("Player orientation")]
     [SerializeField] private Transform playerOrientation;
-    [Header("Player model")]
     [SerializeField] private Transform model;
+
+    private PlayerBrain playerBrain;
 
     private Rigidbody rb;
 
@@ -31,39 +26,56 @@ public class PlayerMovement : MonoBehaviour
     private float horizontalInput;
     private float verticalInput;
 
-    private bool canDash;
+    private bool canDash = true;
     public bool inDash { get; private set; }
 
-
-    void Start()
+    private void Start()
     {
-        rb = GetComponent<Rigidbody>();
+        rb = GetComponentInChildren<Rigidbody>();
         rb.freezeRotation = true;
-        canDash = true;
     }
 
-    void Update()
+    private void Update()
+    {
+        if (!isOwned)
+            return;
+
+        //moving
+        UpdateMovement();
+        if (TryDesh())
+        {
+            StartCoroutine(DashReseting());
+            StartCoroutine(DashTimer());
+        }
+    }
+
+    private void FixedUpdate()
+    {
+        if (!isOwned)
+            return;
+
+        Move();
+    }
+
+    public void UpdateMovement()
     {
         horizontalInput = Input.GetAxisRaw("Horizontal");
         verticalInput = Input.GetAxisRaw("Vertical");
 
-        if (Input.GetKey(dash) && canDash)
-        {
-            canDash = false;
-            Dash();
-
-            Invoke(nameof(DashReseting), dashCooldown);
-        }
-
         LimitingSpeed();
     }
 
-    void FixedUpdate()
+    public bool TryDesh()
     {
-        Move();
+        if (Input.GetKey(dash) && canDash)
+        {
+            Dash();
+            return true;
+        }
+        return false;
     }
 
-    private void Move()
+    public void Move()
     {
         moveDirection = playerOrientation.forward * verticalInput + playerOrientation.right * horizontalInput;
         rb.AddForce(moveDirection.normalized * moveSpeed, ForceMode.Force);
@@ -71,19 +83,23 @@ public class PlayerMovement : MonoBehaviour
 
     private void Dash()
     {
-        StartCoroutine(dashTimer());
         rb.AddForce(model.forward * dashForce, ForceMode.Impulse);
     }
 
-    private IEnumerator dashTimer()
+    public IEnumerator DashTimer()
     {
+        playerBrain = GetComponentInParent<PlayerBrain>();
         inDash = true;
+        playerBrain.isInDash = true;
         yield return new WaitForSeconds(dashWorkingTime);
         inDash = false;
+        playerBrain.isInDash = false;
     }
 
-    private void DashReseting()
+    public IEnumerator DashReseting()
     {
+        canDash = false;
+        yield return new WaitForSeconds(dashCooldown);
         canDash = true;
     }
 
